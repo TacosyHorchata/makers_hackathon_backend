@@ -1,0 +1,7 @@
+Lib 
+dist 
+build
+Scripts
+__pycache__
+pyenv.cfg
+serviceAccountKey.json
