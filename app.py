@@ -6,6 +6,10 @@ from openAI import chatgpt_req
 
 app = Flask(__name__)
 
+@app.route('/', methods=['GET'])
+def salute():
+    return jsonify({'message': 'Hello world'})
+
 @app.route('/process-file', methods=['POST'])
 def process_file():
     print(request.files)
