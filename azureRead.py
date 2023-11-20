@@ -27,9 +27,9 @@ def analyze_read(formUrl):
     )
     result = poller.result()
 
-    print("Document contains content: ", result.content)
-
     return result.content
+
+#analyze_read("https://firebasestorage.googleapis.com/v0/b/camtom-b6444.appspot.com/o/Pdfs%2FFACTURA%20RETRO.pdf?alt=media&token=47567af2-c9be-4915-94c3-66373161ab84")
 
 """
     for idx, style in enumerate(result.styles):

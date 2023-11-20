@@ -1,6 +1,7 @@
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import storage
+from firebase_admin import db
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -11,7 +12,8 @@ json_file_path = os.path.join(script_directory, 'serviceAccountKey.json')
 
 cred = credentials.Certificate(json_file_path)
 firebase_admin.initialize_app(cred, {
-    'storageBucket': 'camtom-b6444.appspot.com'
+    'storageBucket': 'data-magnet-98e0f.appspot.com',
+    'databaseURL': 'https://data-magnet-98e0f-default-rtdb.firebaseio.com/'
 })
 
 bucket = storage.bucket()
@@ -40,9 +42,17 @@ def uploadFileFirebase (path_file):
             # URL of the uploaded file
     file_url = blob.generate_signed_url(expiration=expiration_time)
 
-    print(file_url)
-
     return(file_url)
+
+def save_object_to_firebase(obj):
+    ref = db.reference('requests')  # Reference to the 'response' directory in the database
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")  # Get current timestamp
+    ref.child(timestamp).set(obj)  # Set the object under a timestamp as a child
+
+def save_errors_to_firebase(obj):
+    ref = db.reference('errors')  # Reference to the 'response' directory in the database
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")  # Get current timestamp
+    ref.child(timestamp).set(obj)  # Set the object under a timestamp as a child
 
 
 """

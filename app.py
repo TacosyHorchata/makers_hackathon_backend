@@ -1,10 +1,19 @@
 from flask import Flask, request, jsonify
-from storageFirebase import uploadFileFirebase
+from storageFirebase import uploadFileFirebase, save_object_to_firebase, save_errors_to_firebase
 from azureRead import analyze_read
 from gptToExcel import convertToExcel
 from openAI import chatgpt_req
+from dataMagnet import gpt_request
+
+from PyPDF2 import PdfReader
+import os
+import requests
+
+import json
+from flask_cors import CORS  # Import CORS from flask_cors
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/', methods=['GET'])
 def salute():
@@ -12,28 +21,85 @@ def salute():
 
 @app.route('/process-file', methods=['POST'])
 def process_file():
-    print(request.files)
-    
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file'})
+    try:
+        #cargando el json que incluye el schema
+        posted_data = json.loads(request.form.get('output_json'))
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'})
+        #revisando que exista el archivo en la peticion
+        if 'file' not in request.files:
+            save_errors_to_firebase({'error': 'No file'})
+            return jsonify({'error': 'No file'})
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            save_errors_to_firebase({'error': 'File missing'})
+            return jsonify({'error': 'File missing'})
 
-    # Save the received file to a temporary location or process it directly
-    # For example, you might save it temporarily and get its path
-    file_path = 'temp/' + file.filename
-    file.save(file_path)
+        #revisar si es pdf
+        file_extension = os.path.splitext(file.filename)[1]
+        if file_extension.lower() != '.pdf':
+            save_errors_to_firebase({'error': 'File extension is not a pdf', 'file-name': file.filename, "requested-data": posted_data})
+            return jsonify({'error': 'File extension is not pdf'})
 
-    fileUrl = uploadFileFirebase(file_path)
+        #guardando el archivo temporal
+        file_path = 'temp/' + file.filename
+        file.save(file_path)
 
-    print("Perform the processing" + fileUrl)
-    #analizedPDF = analyze_read(fileUrl)
-    #gpt_response = chatgpt_req(analizedPDF)
-    #convertToExcel(gpt_response)
+        print({"File name":file.filename, "Output JSON": posted_data})
+        #revisando que el archivo no tenga mas de 5 paginas
+        with open(file_path, 'rb') as f:
+            pdf = PdfReader(f)
+            num_pages = len(pdf.pages)
 
-    return jsonify({'message': 'File processed successfully'})
+        if num_pages > 5:
+            save_errors_to_firebase({'error': 'File has too many pages', 'file-name': file.filename, "requested-data": posted_data})
+            return jsonify({'error': 'File has too many pages'})
+        
+        #si todo salio bien, se sube a firebase
+        fileUrl = uploadFileFirebase(file_path)
+        print({"File URL":fileUrl})
+        #se analiza el texto en el pdf
+        analizedPDF = analyze_read(fileUrl)
+        print({"length from Analized PDF":len(analizedPDF)})
+
+        #revisando que el archivo no tenga mas de 10000 caracteres o lo que serian 2000 palabras
+        if len(analizedPDF) > 10000:  
+            save_errors_to_firebase({'error': 'File has too much words', 'file-name': file.filename, "file-url": fileUrl, "requested-data": posted_data})
+            return jsonify({'error': 'File has too much words'})
+        
+        #se guarda lo analizado en 'temp/analyzed_text.txt'
+        txt_file_path = 'temp/analyzed_text.txt'
+        with open(txt_file_path, 'w', encoding='utf-8') as txt_file:
+            txt_file.write(analizedPDF)
+
+        #se le pasa el texto a la funcion del LLM
+        dataExtracted = gpt_request(analizedPDF, posted_data)
+        print({"Data Extracted":dataExtracted})
+
+        #guardar la peticion y sus datos en Firebase
+        reqAndResponseData = {
+            "filename": file.filename,
+            "file-url": fileUrl,
+            "requested-data": posted_data,
+            "lenght-of-document": len(analizedPDF),
+            "extracted-data": json.dumps(dataExtracted),
+        }
+
+        save_object_to_firebase(reqAndResponseData)
+        #convertToExcel(gpt_response)
+
+        return (dataExtracted)
+
+    except Exception as e:
+        error_data = {
+            'error': str(e),
+            'file-name': file.filename if 'file' in locals() else 'Unknown',
+            'file-url': fileUrl if 'fileUrl' in locals() else 'Unknown',
+            'requested-data': posted_data if 'posted_data' in locals() else 'Unknown'
+        }
+        save_errors_to_firebase(error_data)
+        return jsonify({'error': str(e)})
 
 if __name__ == '__main__':
     app.run(debug=True)
