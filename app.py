@@ -7,7 +7,7 @@ from dataMagnet import gpt_request
 
 from PyPDF2 import PdfReader
 import os
-import requests
+
 
 import json
 from flask_cors import CORS  # Import CORS from flask_cors
