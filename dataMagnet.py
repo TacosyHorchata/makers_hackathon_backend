@@ -61,6 +61,7 @@ Any output key containing < and > indicates you must generate the key name to re
           ]
         )
         res = response.choices[0].message.content.replace('\'', '"')
+        print('hey')
         
         # ensure that we don't replace away aprostophes in text 
         res = re.sub(r"(\w)\"(\w)", r"\1'\2", res)

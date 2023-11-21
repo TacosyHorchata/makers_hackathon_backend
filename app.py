@@ -82,26 +82,8 @@ def process_file():
             txt_file.write(analyzedPDF)
 
         #se le pasa el texto a la funcion del LLM
-        job = q.enqueue(gpt_request, args=(analyzedPDF, posted_data), job_timeout=500)
+        dataExtracted = gpt_request(analyzedPDF, posted_data)
 
-        while True:
-            status = job.get_status()
-            if status == 'SUCCESSFUL':
-                # Job is successfully completed
-                dataExtracted = job.return_value
-                print({"Data Extracted": dataExtracted})
-                break  
-            elif status == 'FAILED' or status == 'STOPPED':
-                # Job encountered an error or stopped
-                print("Job failed or stopped.")
-                break  
-            else:
-                print('looping', status)
-                # Job is still in progress, wait for some time before checking again
-                time.sleep(2)
-
-        # Wait for the job to finish and get the result
-        dataExtracted = dataExtracted = job.return_value
         print({"Data Extracted":dataExtracted})
 
         #guardar la peticion y sus datos en Firebase
