@@ -84,7 +84,7 @@ def process_file():
         job = q.enqueue(gpt_request, analyzedPDF, posted_data)
 
         # Wait for the job to finish and get the result
-        dataExtracted = job.result
+        dataExtracted = job.get_result()
         print({"Data Extracted":dataExtracted})
 
         #guardar la peticion y sus datos en Firebase
