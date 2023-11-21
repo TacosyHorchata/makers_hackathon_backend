@@ -82,23 +82,44 @@ def process_file():
             txt_file.write(analyzedPDF)
 
         #se le pasa el texto a la funcion del LLM
-        dataExtracted = gpt_request(analyzedPDF, posted_data)
+        job = q.enqueue(gpt_request, args=(analyzedPDF, posted_data), job_timeout=500)
 
+        '''
+        while True:
+            status = job.get_status()
+            if status == 'SUCCESSFUL':
+                # Job is successfully completed
+                dataExtracted = job.return_value
+                print({"Data Extracted": dataExtracted})
+                break  
+            elif status == 'FAILED' or status == 'STOPPED':
+                # Job encountered an error or stopped
+                print("Job failed or stopped.")
+                break  
+            else:
+                print('looping', status)
+                # Job is still in progress, wait for some time before checking again
+                time.sleep(2)
+                
+        # Wait for the job to finish and get the result
+        dataExtracted = job.return_value
         print({"Data Extracted":dataExtracted})
-
+        
+        
         #guardar la peticion y sus datos en Firebase
-        reqAndResponseData = {
+
+        save_object_to_firebase(reqAndResponseData)
+        '''
+
+        fileData = {
             "filename": file.filename,
             "file-url": fileUrl,
             "requested-data": posted_data,
             "lenght-of-document": len(analyzedPDF),
-            "extracted-data": json.dumps(dataExtracted),
+            #"extracted-data": json.dumps(dataExtracted),
         }
 
-        save_object_to_firebase(reqAndResponseData)
-        #convertToExcel(gpt_response)
-
-        return (dataExtracted)
+        return jsonify({'job_id': job.id, fileData: fileData})
 
     except Exception as e:
         error_data = {
@@ -109,6 +130,31 @@ def process_file():
         }
         save_errors_to_firebase(error_data)
         return jsonify({'error': str(e)})
+    
+@app.route('/job-status/<job_id>', methods=['GET'])
+def get_job_status(job_id):
+    job = q.fetch_job(job_id)
+    if job is not None:
+        return jsonify({'status': job.get_status()})
+    else:
+        return jsonify({'error': 'Job not found'})
+
+# Endpoint to retrieve job result
+@app.route('/job-result/<job_id>', methods=['GET'])
+def get_job_result(job_id):
+    job = q.fetch_job(job_id)
+    
+    return jsonify({'result': job.result})
+
+# Endpoint to cancel a job
+@app.route('/cancel-job/<job_id>', methods=['DELETE'])
+def cancel_job(job_id):
+    job = q.fetch_job(job_id)
+    if job is not None:
+        job.cancel()
+        return jsonify({'message': 'Job canceled successfully'})
+    else:
+        return jsonify({'error': 'Job not found'})
 
 if __name__ == '__main__':
     app.run(debug=True)
