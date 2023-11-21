@@ -119,7 +119,7 @@ def process_file():
             #"extracted-data": json.dumps(dataExtracted),
         }
 
-        return jsonify({'job_id': job.id, fileData: fileData})
+        return jsonify({'job_id': job.id, 'fileData': fileData})
 
     except Exception as e:
         error_data = {
