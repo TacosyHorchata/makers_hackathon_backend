@@ -8,12 +8,19 @@ from dataMagnet import gpt_request
 from PyPDF2 import PdfReader
 import os
 
+#imports for worker
+from rq import Queue
+from worker import conn
+
 
 import json
 from flask_cors import CORS  # Import CORS from flask_cors
 
 app = Flask(__name__)
 CORS(app)
+
+#worker connection
+q = Queue(connection=conn)
 
 @app.route('/', methods=['GET'])
 def salute():
@@ -60,21 +67,24 @@ def process_file():
         fileUrl = uploadFileFirebase(file_path)
         print({"File URL":fileUrl})
         #se analiza el texto en el pdf
-        analizedPDF = analyze_read(fileUrl)
-        print({"length from Analized PDF":len(analizedPDF)})
+        analyzedPDF = analyze_read(fileUrl)
+        print({"length from Analized PDF":len(analyzedPDF)})
 
         #revisando que el archivo no tenga mas de 10000 caracteres o lo que serian 2000 palabras
-        if len(analizedPDF) > 10000:  
+        if len(analyzedPDF) > 10000:  
             save_errors_to_firebase({'error': 'File has too much words', 'file-name': file.filename, "file-url": fileUrl, "requested-data": posted_data})
             return jsonify({'error': 'File has too much words'})
         
         #se guarda lo analizado en 'temp/analyzed_text.txt'
         txt_file_path = 'temp/analyzed_text.txt'
         with open(txt_file_path, 'w', encoding='utf-8') as txt_file:
-            txt_file.write(analizedPDF)
+            txt_file.write(analyzedPDF)
 
         #se le pasa el texto a la funcion del LLM
-        dataExtracted = gpt_request(analizedPDF, posted_data)
+        job = q.enqueue(gpt_request, analyzedPDF, posted_data)
+
+        # Wait for the job to finish and get the result
+        dataExtracted = job.result
         print({"Data Extracted":dataExtracted})
 
         #guardar la peticion y sus datos en Firebase
@@ -82,7 +92,7 @@ def process_file():
             "filename": file.filename,
             "file-url": fileUrl,
             "requested-data": posted_data,
-            "lenght-of-document": len(analizedPDF),
+            "lenght-of-document": len(analyzedPDF),
             "extracted-data": json.dumps(dataExtracted),
         }
 
