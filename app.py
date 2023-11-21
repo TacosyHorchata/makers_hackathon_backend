@@ -82,7 +82,7 @@ def process_file():
             txt_file.write(analyzedPDF)
 
         #se le pasa el texto a la funcion del LLM
-        job = q.enqueue(gpt_request, analyzedPDF, posted_data)
+        job = q.enqueue(gpt_request, args=(analyzedPDF, posted_data), job_timeout=500)
 
         while True:
             status = job.get_status()
