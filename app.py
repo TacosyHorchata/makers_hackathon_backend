@@ -135,7 +135,7 @@ def process_file():
 def get_job_status(job_id):
     job = q.fetch_job(job_id)
     if job is not None:
-        return jsonify({'status': job.get_status()})
+        return jsonify({'status': job.get_status(), 'result': job.result})
     else:
         return jsonify({'error': 'Job not found'})
 
