@@ -44,12 +44,12 @@ def strict_output(system_prompt, user_prompt, output_format, default_category = 
         # if output_format contains dynamic elements, process it accordingly
         if dynamic_elements: 
             output_format_prompt += f'''
-Any text enclosed by < and > indicates you must generate content to replace it. Example input: Go to <location>, Example output: Go to the garden
-Any output key containing < and > indicates you must generate the key name to replace it. Example input: {{'<location>': 'description of location'}}, Example output: {{school: a place for education}}'''
+                                    Any text enclosed by < and > indicates you must generate content to replace it. Example input: Go to <location>, Example output: Go to the garden
+                                    Any output key containing < and > indicates you must generate the key name to replace it. Example input: {{'<location>': 'description of location'}}, Example output: {{school: a place for education}}'''
 
         # if input is in a list format, ask it to generate json in a list
         if list_input:
-            output_format_prompt += '''\nGenerate a list of json, one json for each input element.'''
+            output_format_prompt += '''\nIf user ask for a list, display it as ["{item_1-property_1}&\&\{item_1-property_2}","{item_2-property_1}&\&\{item_2-property_2}"]'''
             
         # Use OpenAI to get a response
         response = client.chat.completions.create(
