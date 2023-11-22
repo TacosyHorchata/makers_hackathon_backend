@@ -8,6 +8,7 @@ import os
 from openai import OpenAI
 import json
 import re
+import time
 
 #API Keys
 os.environ['OPENAI_API_KEY'] = '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'
@@ -126,3 +127,6 @@ def gpt_request(pdfConvertedToText, jsonData):
 
     return (res)
 
+def test():
+    time.sleep(7)
+    return 'lol'

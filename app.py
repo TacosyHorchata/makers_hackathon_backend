@@ -3,7 +3,7 @@ from storageFirebase import uploadFileFirebase, save_object_to_firebase, save_er
 from azureRead import analyze_read
 from gptToExcel import convertToExcel
 from openAI import chatgpt_req
-from dataMagnet import gpt_request
+from dataMagnet import gpt_request, test
 
 from PyPDF2 import PdfReader
 import os
@@ -83,6 +83,10 @@ def process_file():
 
         #se le pasa el texto a la funcion del LLM
         job = q.enqueue(gpt_request, args=(analyzedPDF, posted_data), job_timeout=500)
+        job2 = q.enqueue(test)
+
+        time.sleep(10)
+        print(job2.result)
 
         '''
         while True:
@@ -135,7 +139,7 @@ def process_file():
 def get_job_status(job_id):
     job = q.fetch_job(job_id)
     if job is not None:
-        return jsonify({'status': job.get_status(refresh=True), 'job': job})
+        return jsonify({'status': job.get_status(refresh=True), 'job': job.result})
     else:
         return jsonify({'error': 'Job not found'})
 
