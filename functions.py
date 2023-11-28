@@ -45,7 +45,7 @@ def gpt_request_completions(extractedPdf, desiredOutput):
     nullExample = {"fecha":  "null", "direccion de destino": "null"}
 
     # Step 1: send the conversation and available functions to the model
-    messages = [{"role": "system", "content": f"You are an assitant meant to extract relevant data from a text to json, is very important that you stick to keys of the desired json. \n If the json includes a list, such as a 'products list', return an array of very short objects with the most important properties of each product/service/item. \n \n The desired output is: \n {desiredOutput} \n\n if there is any missing value, return 'null'. Example: \n {nullExample}"},{"role": "user", "content":f"This is the text to be converted:\n{extractedPdf}"} ]
+    messages = [{"role": "system", "content": f"You are an assistant meant to extract relevant data from a text to json, is very important that you stick to structure of the desired json, only parse the fields in the desired json. \n If the json includes a list, such as a 'products list', return an array of very short objects with the most important properties of each product/service/item. \n \n The desired json is: \n {desiredOutput} \n\n if there is any missing value, return 'null'. Example: \n {nullExample}"},{"role": "user", "content":f"This is the text to be converted:\n{extractedPdf}"} ]
     #tools = desiredOutput
     response = client.chat.completions.create(
         model="gpt-3.5-turbo-1106",
