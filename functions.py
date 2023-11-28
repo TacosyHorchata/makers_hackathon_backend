@@ -54,7 +54,7 @@ def gpt_request_completions(extractedPdf, desiredOutput):
         #tools=tools,
         #tool_choice={"type": "function", "function": {"name": "get_data"}},  # auto is default, but we'll be explicit
     )
-    res = response.choices[0].message.content.replace('\'', "''")
+    res = response.choices[0].message.content.replace('\'', '"')
     res = re.sub(r"(\w)\"(\w)", r"\1'\2", res)
 
     return res
