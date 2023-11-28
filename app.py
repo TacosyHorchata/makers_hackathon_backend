@@ -5,6 +5,7 @@ from functions import gpt_request_completions
 
 from PyPDF2 import PdfReader
 import os
+import schedule
 
 #imports for worker
 from rq import Queue
@@ -148,6 +149,32 @@ def cancel_job(job_id):
         return jsonify({'message': 'Job canceled successfully'})
     else:
         return jsonify({'error': 'Job not found'})
+    
+def delete_temp_files():
+    folder = 'temp/'
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+                print(f"Deleted {file_path}")
+        except Exception as e:
+            print(f"Error deleting {file_path}: {e}")
+
+# Schedule the function to run every 10 minutes
+schedule.every(10).minutes.do(delete_temp_files)
+
+# Function to run the scheduled tasks
+def run_schedule():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
+# Run the scheduled tasks in a separate thread
+import threading
+t = threading.Thread(target=run_schedule)
+t.start()
+
 
 if __name__ == '__main__':
     app.run(debug=True)

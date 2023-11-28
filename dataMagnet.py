@@ -4,23 +4,12 @@ import json
 import re
 import time
 
-import pdfplumber
-
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
 client = OpenAI()
-
-def extract_text_pdfplumber(pdf_path):
-    text = ''
-    with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
-            text += page.extract_text()
-    return text
-
-lol = extract_text_pdfplumber('temp/test.pdf')
 
 def strict_output(system_prompt, user_prompt, output_format, default_category = "", output_value_only = False,
                   model = 'gpt-3.5-turbo-16k', temperature = 0, num_tries = 2, verbose = False):
@@ -137,8 +126,3 @@ def gpt_request(pdfConvertedToText, jsonData):
 def test():
     time.sleep(7)
     return 'lol'
-
-
-
-
-print(gpt_request(lol,{"fecha":"fecha del invoice", "invoice id": "id del invoice", "lista de productos":"array de los productos en la factura, un string corto para cada uno"}))
