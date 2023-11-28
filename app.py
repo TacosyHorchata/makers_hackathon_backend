@@ -73,11 +73,6 @@ def process_file():
         if len(analyzedPDF) > 10000:  
             save_errors_to_firebase({'error': 'File has too much words', 'file-name': file.filename, "file-url": fileUrl, "requested-data": posted_data})
             return jsonify({'error': 'File has too much words'})
-        
-        #se guarda lo analizado en 'temp/analyzed_text.txt'
-        txt_file_path = 'temp/analyzed_text.txt'
-        with open(txt_file_path, 'w', encoding='utf-8') as txt_file:
-            txt_file.write(analyzedPDF)
 
         #se le pasa el texto a la funcion del LLM
         job = q.enqueue(gpt_request_completions, args=(analyzedPDF, posted_data), job_timeout=500)
