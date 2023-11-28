@@ -1,6 +1,9 @@
 import os
 import openai
-openai.api_key = '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'
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 datos = ''
 

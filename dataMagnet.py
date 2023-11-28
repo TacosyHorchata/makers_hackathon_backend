@@ -1,19 +1,26 @@
-from storageFirebase import uploadFileFirebase
-from azureRead import analyze_read
-from gptToExcel import convertToExcel
-
-from flask import request, jsonify
-
 import os
 from openai import OpenAI
 import json
 import re
 import time
 
-#API Keys
-os.environ['OPENAI_API_KEY'] = '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'
+import pdfplumber
+
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 client = OpenAI()
+
+def extract_text_pdfplumber(pdf_path):
+    text = ''
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            text += page.extract_text()
+    return text
+
+lol = extract_text_pdfplumber('temp/test.pdf')
 
 def strict_output(system_prompt, user_prompt, output_format, default_category = "", output_value_only = False,
                   model = 'gpt-3.5-turbo-16k', temperature = 0, num_tries = 2, verbose = False):
@@ -39,7 +46,7 @@ def strict_output(system_prompt, user_prompt, output_format, default_category = 
         output_format_prompt = f'''\nUse the following json format: \n\n {output_format} '''
         
         if list_output:
-            output_format_prompt += f'''\nIf output field is a list, classify output into the best element of the list.'''
+            output_format_prompt += '''\nIf user ask for a list, display it as ["{item_1-property_1}&\&\{item_1-property_2}","{item_2-property_1}&\&\{item_2-property_2}"]'''
         
         # if output_format contains dynamic elements, process it accordingly
         if dynamic_elements: 
@@ -87,7 +94,7 @@ def strict_output(system_prompt, user_prompt, output_format, default_category = 
                     if '<' in key or '>' in key: continue
                     # if output field missing, raise an error
                     if key not in output[index]: raise Exception(f"{key} not in json output")
-                    # check that one of the choices given for the list of words is an unknown
+                    # si una de los campos pedidos por el usuario es un array
                     if isinstance(output_format[key], list):
                         choices = output_format[key]
                         # ensure output is not a list
@@ -130,3 +137,8 @@ def gpt_request(pdfConvertedToText, jsonData):
 def test():
     time.sleep(7)
     return 'lol'
+
+
+
+
+print(gpt_request(lol,{"fecha":"fecha del invoice", "invoice id": "id del invoice", "lista de productos":"array de los productos en la factura, un string corto para cada uno"}))

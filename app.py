@@ -1,9 +1,7 @@
 from flask import Flask, request, jsonify
-from storageFirebase import uploadFileFirebase, save_object_to_firebase, save_errors_to_firebase
+from storageFirebase import uploadFileFirebase, save_errors_to_firebase
 from azureRead import analyze_read
-from gptToExcel import convertToExcel
-from openAI import chatgpt_req
-from dataMagnet import gpt_request, test
+from functions import gpt_request_completions
 
 from PyPDF2 import PdfReader
 import os
@@ -82,12 +80,8 @@ def process_file():
             txt_file.write(analyzedPDF)
 
         #se le pasa el texto a la funcion del LLM
-        job = q.enqueue(gpt_request, args=(analyzedPDF, posted_data), job_timeout=500)
-        job2 = q.enqueue(test)
-
-        time.sleep(10)
-        print(job2.result)
-
+        job = q.enqueue(gpt_request_completions, args=(analyzedPDF, posted_data), job_timeout=500)
+        #data = gpt_request_completions(analyzedPDF, posted_data) #local development
         '''
         while True:
             status = job.get_status()
@@ -122,7 +116,7 @@ def process_file():
             "lenght-of-document": len(analyzedPDF),
             #"extracted-data": json.dumps(dataExtracted),
         }
-
+        #return jsonify({'data': data, 'fileData': fileData})
         return jsonify({'job_id': job.id, 'fileData': fileData})
 
     except Exception as e:
