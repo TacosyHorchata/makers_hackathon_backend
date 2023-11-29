@@ -61,7 +61,7 @@ def process_file():
 
         if num_pages > 5:
             save_errors_to_firebase({'error': 'File has more than 5 pages', 'file-name': file.filename, "requested-data": posted_data})
-            return jsonify({'error': 'File has more than 5 pages'})
+            return jsonify({'error': 'Try submitting a file that is less than 5 pages in length'})
         
         #si todo salio bien, se sube a firebase
         fileUrl = uploadFileFirebase(file_path)
@@ -73,10 +73,10 @@ def process_file():
         #revisando que el archivo no tenga mas de 10000 caracteres o lo que serian 2000 palabras
         if len(analyzedPDF) > 10000:  
             save_errors_to_firebase({'error': 'File has more than 2000 words', 'file-name': file.filename, "file-url": fileUrl, "requested-data": posted_data})
-            return jsonify({'error': 'File has more than 2000 words'})
+            return jsonify({'error': 'Try submitting a file that is less than 2000 words length'})
 
         #se le pasa el texto a la funcion del LLM
-        job = q.enqueue(gpt_request_completions, args=(analyzedPDF, posted_data), job_timeout=500)
+        job = q.enqueue(gpt_request_completions, args=(analyzedPDF, posted_data), job_timeout=80)
         #data = gpt_request_completions(analyzedPDF, posted_data) #local development
         '''
         while True:
