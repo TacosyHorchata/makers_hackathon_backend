@@ -14,7 +14,7 @@ def salute():
     return jsonify({'message': 'Hello world'})
 
 @app.route('/scrape-data-processing', methods=['POST'])
-def process_file():
+def scrapeDataAndProcessing():
     try:
         return jsonify({'job_id': 'Hey'})
 
